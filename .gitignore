@@ -1,0 +1,5 @@
+/target
+.env
+
+# Originele, ongecomprimeerde sliderfoto's (backup) - te groot om in git te bewaren
+/originals

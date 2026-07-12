@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cafetaria Lunchroom Kolkie | Dieren</title>
+  <meta name="description" content="Verse friet, snacks en lunch in het centrum van Dieren. Bel & bestel via 06-45389198." />
+  
+  <link rel="stylesheet" href="/public/style.css">
+</head>
+<body>
+
+<!-- HEADER / NAV -->
+<header class="site-header">
+  <nav class="nav container">
+    <!-- MOBIELE HAMBURGER LINKS -->
+    <button class="nav-toggle" aria-label="menu openen" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+
+    <!-- MENU LINKS (desktop/mobiel) -->
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#over">Over ons</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="#opening">Openingstijden</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true"></div>
+
+    <div class="container hero-content">
+      <h1>Cafetaria Lunchroom Kolkie</h1>
+      <p class="lead">
+        Of je nu zin hebt in een snelle snack uit de cafetaria, een smakelijke lunch, een gezellig drankje op het terras of een menu in de zaak – bij Kolkie ben je altijd op de juiste plek.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn" href="/public/menu.pdf" target="_blank" rel="noopener">Bekijk menukaart (PDF)</a>
+        <a class="btn btn-outline" href="tel:+31645389198">Bel & bestel: 06-45389198</a>
+      </div>
+
+      <div class="hero-meta">
+        <div class="meta-card">
+          <div class="meta-title">Vandaag</div>
+          <div>{{ vandaag_open }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WRAPPER VOOR DE REST VAN DE PAGINA -->
+  <div class="page-bg">
+
+    <!-- OVER ONS -->
+    <section id="over" class="section section-alt">
+      <div class="container split">
+        <div>
+          <h2>Over ons</h2>
+          <p>
+            Cafetaria Lunchroom Kolkie is een eigentijdse horecazaak in het centrum van Dieren, waar kwaliteit, betaalbaarheid en gezelligheid samenkomen.
+          </p>
+          <p>
+            Initiatiefnemer Stan van der Kolk treedt hiermee in de voetsporen van zijn vader Wilbert van der Kolk, bekend van Kwalitaria Kolk en Het Wapen van Rheden. Met die ervaring in zijn achterzak wil Stan het dorpshart opnieuw een plek geven waar een ieder zich welkom voelt.
+          </p>
+          <p>
+            Of je nu zin hebt in een snelle snack uit de cafetaria, een smakelijke lunch, een gezellig drankje op het terras of een menu in de zaak – bij Kolkie ben je altijd op de juiste plek. Alleen, met het gezin of samen met vrienden: wij zorgen voor gastvrijheid en een vertrouwde sfeer.
+          </p>
+          <p>
+            Ons doel is eenvoudig: het centrum van Dieren verrijken met een plek waar mensen samenkomen, genieten van goed eten en zich écht thuis voelen.
+          </p>
+        </div>
+
+        <div class="image-stack">
+          <img src="/public/images/BinnenkantVanKolkie.webp" alt="Binnenkant van Kolkie" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <!-- Carousel: slides worden server-side gerenderd in Rust, geen JS nodig -->
+        <div class="carousel-wrapper">
+          <div class="carousel-track">
+            {% for img in slider_images %}
+            <div class="carousel-slide">
+              <img src="/public/images/slider/{{ img }}" alt="Kolkie sfeer" loading="lazy">
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT SECTIE -->
+    <section id="contact" class="section section-alt">
+      <div class="container split contact-flex">
+        <!-- LINKER KANT: contact info + formulier -->
+        <div class="contact-info">
+          <h2>Wil je in contact komen?</h2>
+          <p>
+            We denken graag met je mee! Of je nu een kinderfeestje wilt organiseren, een reservering voor een grote groep wilt maken, een bestelling wilt plaatsen of een andere vraag hebt — via het onderstaande formulier komt je bericht direct bij de juiste persoon terecht.
+          </p>
+
+          {% if contact_success %}
+            <div class="form-banner form-banner-success" role="status">
+              Bedankt voor je bericht! We nemen zo snel mogelijk contact met je op.
+            </div>
+          {% else if contact_error %}
+            <div class="form-banner form-banner-error" role="alert">
+              Er ging iets mis bij het versturen van je bericht. Probeer het opnieuw of bel ons direct op 06&nbsp;-&nbsp;45389198.
+            </div>
+          {% endif %}
+
+          <!-- CONTACTFORMULIER -->
+          <form class="contact-form" action="/send-message" method="POST">
+            <div>
+              <label for="name">Naam</label>
+              <input type="text" id="name" name="name" placeholder="Je naam" required>
+            </div>
+            <div>
+              <label for="email">E-mail</label>
+              <input type="email" id="email" name="email" placeholder="Je e-mail" required>
+            </div>
+            <div>
+              <label for="phone">Telefoon</label>
+              <input type="tel" id="phone" name="phone" placeholder="Je telefoonnummer">
+            </div>
+            <div>
+              <label for="message">Bericht</label>
+              <textarea id="message" name="message" rows="5" placeholder="Je bericht..." required></textarea>
+            </div>
+            <!-- Honeypot: verborgen voor mensen, spambots vullen dit vaak toch in -->
+            <div class="honeypot-field" aria-hidden="true">
+              <label for="website">Website</label>
+              <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+            </div>
+            <button type="submit" class="btn">Verstuur</button>
+          </form>
+        </div>
+
+        <!-- RECHTER KANT: kaart + route knop -->
+        <div class="map-card">
+          <iframe
+            src="https://www.google.com/maps?q=Wilhelminaweg+23+6951BM+Dieren&output=embed"
+            width="100%"
+            height="350"
+            style="border:0; border-radius:12px;"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+
+          <div style="text-align:center; margin-top:15px;">
+            <a class="btn-route" href="https://www.google.com/maps/dir/?api=1&destination=Wilhelminaweg+23+6951BM+Dieren" target="_blank" rel="noopener">
+              Route plannen
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPENINGSTIJDEN -->
+    <section id="opening" class="section container">
+      <div class="section-head">
+        <h2>Openingstijden</h2>
+        <p>Kom langs of bestel snel via telefoon/WhatsApp.</p>
+      </div>
+
+      <div class="hours">
+        <div class="hours-row"><span>Maandag</span><span>11:30 – 20:30</span></div>
+        <div class="hours-row"><span>Dinsdag</span><span>Gesloten</span></div>
+        <div class="hours-row"><span>Woensdag</span><span>11:30 – 20:30</span></div>
+        <div class="hours-row"><span>Donderdag</span><span>11:30 – 20:30</span></div>
+        <div class="hours-row"><span>Vrijdag</span><span>11:30 – 20:30</span></div>
+        <div class="hours-row"><span>Zaterdag</span><span>11:30 – 20:30</span></div>
+        <div class="hours-row"><span>Zondag</span><span>11:30 – 20:30</span></div>
+      </div>
+    </section>
+
+    <!-- FOOTER (NU OOK BINNEN DE WRAPPER) -->
+    <footer class="footer">
+      <div class="container footer-grid">
+        <div class="footer-brand">
+          <img 
+            src="/public/images/Logo/LogoKolkie.avif"
+            alt="Cafetaria Lunchroom Kolkie logo"
+            class="footer-logo-img"
+          />
+        </div>
+
+        <div>
+          <h4>Adres</h4>
+          <p>Wilhelminaweg 23<br/>6951BM Dieren</p>
+        </div>
+
+        <div>
+          <h4>Contact</h4>
+          <p>
+            <a href="tel:+31645389198" class="contact-link">
+              <svg class="icon-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              06 - 45389198
+            </a>
+          </p>
+          <p>
+            <a href="https://www.instagram.com/cafetaria_kolkie?igsh=Y3ZjNXNobm0yeWEz" target="_blank" rel="noopener" class="contact-link">
+              <svg class="icon-instagram" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="18" cy="6" r="1"/>
+              </svg>
+              Instagram
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+
+  </div><!-- /page-bg -->
+</main>
+
+<!-- JAVASCRIPT voor mobiele navigatie -->
+<script>
+  const toggle = document.querySelector('.nav-toggle');
+  const links = document.querySelector('.nav-links');
+
+  toggle.addEventListener('click', () => {
+    const open = links.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+</script>
+
+<!-- SCROLL-TO-TOP (HIER PLAATSEN) -->
+<button class="scroll-top" title="Naar boven">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 5l7 7-1.4 1.4-4.6-4.6V19h-2V9.8l-4.6 4.6L5 12z"/>
+  </svg>
+</button>
+
+<script>
+  // Scroll-to-top knop
+  const scrollTopBtn = document.querySelector('.scroll-top');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+      scrollTopBtn.classList.add('show');
+    } else {
+      scrollTopBtn.classList.remove('show');
+    }
+  });
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+
+<!-- RECHTS STICKY MENU -->
+<div class="sticky-menu">
+  <a href="/public/menu.pdf" target="_blank" class="sticky-item menu" title="Menukaart" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14,2 14,8 20,8"/>
+    </svg>
+  </a>
+
+  <a href="https://www.instagram.com/cafetaria_kolkie" target="_blank" class="sticky-item instagram" title="Instagram" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+      <circle cx="12" cy="12" r="4"/>
+    </svg>
+  </a>
+
+  <a href="tel:+31645389198" class="sticky-item phone" title="Bel ons">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  </a>
+</div>
+
+</body>
+</html>

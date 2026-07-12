@@ -14,8 +14,26 @@ De huidige menukaart blijft voorlopig beschikbaar als **PDF**, zodat de originel
 
 ## Tech stack
 - **Rust** + **Rocket** (webserver)
+- **Askama** (compile-time gecheckte HTML-templates, i.p.v. Tera)
+- **lettre** (verzenden van contactformulier-mails via SMTP)
 - **HTML/CSS/JS** (frontend)
 - Geen frameworks nodig voor fase 1
+
+## Contactformulier / e-mail configureren
+Het contactformulier op `/send-message` verstuurt een e-mail via SMTP naar het adres
+in `CONTACT_TO_EMAIL`. Dit moet je zelf configureren via environment variables (lokaal
+via een `.env` bestand, in productie via echte env vars van je hostingprovider):
+
+1. Kopieer `.env.example` naar `.env`.
+2. Maak een gratis account bij een transactional e-mail service (bv.
+   [Brevo](https://www.brevo.com), Resend of Mailgun) en maak daar SMTP-credentials aan.
+   Gebruik **niet** je eigen Outlook-wachtwoord.
+3. Vul `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` en `SMTP_FROM` in
+   `.env` in met de gegevens van die dienst.
+4. `CONTACT_TO_EMAIL` staat standaard op `lucasrensen@outlook.com`.
+
+Zolang SMTP niet geconfigureerd is, toont het formulier netjes een foutmelding
+("Er ging iets mis...") in plaats van te crashen.
 
 ## Installatie
 1. Zorg dat je **Rust** hebt geïnstalleerd:  

@@ -1,9 +1,19 @@
 [package]
-name = "rust-webserver"
+name = "rocket-kolkiewebsite"
 version = "0.1.0"
 edition = "2021"
+authors = ["Lucas"]
 
 [dependencies]
-rocket = { version = "0.5.1", features = ["json"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+rocket = { version = "0.5.0-rc.3", features = ["tls", "json"] }
+chrono = { version = "0.4", features = ["serde"] }
+askama = "0.16.0"
+lettre = { version = "0.11.22", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }
+dotenvy = "0.15.7"
+
+[[bin]]
+name = "rocket-kolkiewebsite"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = "z"
