@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /send-message
+
+# Vul hier je eigen domein in zodra de site live staat:
+# Sitemap: https://www.kolkie.nl/sitemap.xml

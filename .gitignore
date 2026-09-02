@@ -3,3 +3,11 @@
 
 # Originele, ongecomprimeerde sliderfoto's (backup) - te groot om in git te bewaren
 /originals
+
+# Build-output en lokale rommel
+/dist
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db

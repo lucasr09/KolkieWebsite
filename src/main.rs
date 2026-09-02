@@ -6,11 +6,19 @@ use chrono::{Datelike, Local, Weekday};
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
+use rocket::fairing::{Fairing, Info, Kind};
 use rocket::form::Form;
-use rocket::fs::FileServer;
+use rocket::fs::{FileServer, NamedFile};
+use rocket::http::Header;
 use rocket::response::content::RawHtml;
 use rocket::response::Redirect;
+use rocket::{Request, Response, State};
+use std::collections::HashMap;
 use std::env;
+use std::net::IpAddr;
+use std::path::Path;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 //hier staan de openingstijden
 fn openingstijd_vandaag() -> &'static str {
@@ -66,6 +74,77 @@ fn contact_form_is_valid(form: &ContactForm) -> bool {
         && email.chars().count() <= 320
         && !message.is_empty()
         && message.chars().count() <= 5000
+}
+
+// Simpele in-memory rate limiter per IP-adres, zodat het contactformulier niet
+// eindeloos gespamd kan worden. Geen externe dependency, geen database.
+struct RateLimiter {
+    hits: Mutex<HashMap<IpAddr, Vec<Instant>>>,
+}
+
+impl RateLimiter {
+    fn new() -> Self {
+        Self {
+            hits: Mutex::new(HashMap::new()),
+        }
+    }
+
+    /// Sta maximaal MAX inzendingen per WINDOW toe per IP-adres.
+    fn allow(&self, ip: IpAddr) -> bool {
+        const MAX: usize = 5;
+        const WINDOW: Duration = Duration::from_secs(600); // 10 minuten
+
+        let now = Instant::now();
+        let mut map = self.hits.lock().unwrap();
+
+        // Houd de tabel klein: gooi verlopen tijdstippen en lege IP's weg.
+        map.retain(|_, times| {
+            times.retain(|t| now.duration_since(*t) < WINDOW);
+            !times.is_empty()
+        });
+
+        let times = map.entry(ip).or_default();
+        if times.len() >= MAX {
+            return false;
+        }
+        times.push(now);
+        true
+    }
+}
+
+// Response-fairing die op elke respons de beveiligingsheaders zet die Rockets
+// ingebouwde Shield niet meelevert (CSP + Referrer-Policy).
+struct SecurityHeaders;
+
+#[rocket::async_trait]
+impl Fairing for SecurityHeaders {
+    fn info(&self) -> Info {
+        Info {
+            name: "Security headers",
+            kind: Kind::Response,
+        }
+    }
+
+    async fn on_response<'r>(&self, _req: &'r Request<'_>, res: &mut Response<'r>) {
+        res.set_header(Header::new(
+            "Content-Security-Policy",
+            "default-src 'self'; \
+             base-uri 'self'; \
+             form-action 'self'; \
+             frame-ancestors 'self'; \
+             object-src 'none'; \
+             img-src 'self' data:; \
+             style-src 'self'; \
+             script-src 'self'; \
+             font-src 'self'; \
+             connect-src 'self'; \
+             frame-src https://www.google.com",
+        ));
+        res.set_header(Header::new(
+            "Referrer-Policy",
+            "strict-origin-when-cross-origin",
+        ));
+    }
 }
 
 fn send_contact_email(form: &ContactForm) -> Result<(), String> {
@@ -158,12 +237,23 @@ fn index(contact: Option<&str>) -> RawHtml<String> {
 }
 
 #[post("/send-message", data = "<form>")]
-async fn send_message(form: Form<ContactForm>) -> Redirect {
+async fn send_message(
+    form: Form<ContactForm>,
+    limiter: &State<RateLimiter>,
+    client_ip: Option<IpAddr>,
+) -> Redirect {
     let form = form.into_inner();
 
     // Bot gedetecteerd via honeypot: doe alsof het gelukt is, verstuur niets.
     if !form.website.trim().is_empty() {
         return Redirect::to("/?contact=success#contact");
+    }
+
+    // Rate limit per IP. Onbekend IP valt terug op een gedeelde bucket.
+    let ip = client_ip.unwrap_or(IpAddr::from([0, 0, 0, 0]));
+    if !limiter.allow(ip) {
+        eprintln!("Contactformulier: rate limit bereikt voor {ip}");
+        return Redirect::to("/?contact=error#contact");
     }
 
     if !contact_form_is_valid(&form) {
@@ -185,9 +275,29 @@ async fn send_message(form: Form<ContactForm>) -> Redirect {
     }
 }
 
-#[get("/test")]
-fn test() -> &'static str {
-    "OK"
+#[get("/favicon.ico")]
+async fn favicon() -> Option<NamedFile> {
+    NamedFile::open(Path::new("public/favicon.ico")).await.ok()
+}
+
+#[get("/robots.txt")]
+async fn robots() -> Option<NamedFile> {
+    NamedFile::open(Path::new("public/robots.txt")).await.ok()
+}
+
+#[catch(404)]
+fn not_found() -> RawHtml<&'static str> {
+    RawHtml(include_str!("../templates/404.html"))
+}
+
+#[catch(500)]
+fn server_error() -> RawHtml<&'static str> {
+    RawHtml(include_str!("../templates/500.html"))
+}
+
+#[catch(default)]
+fn other_error() -> RawHtml<&'static str> {
+    RawHtml(include_str!("../templates/500.html"))
 }
 
 #[launch]
@@ -195,6 +305,9 @@ fn rocket() -> _ {
     dotenvy::dotenv().ok();
 
     rocket::build()
-        .mount("/", routes![index, test, send_message])
-        .mount("/public", FileServer::from("public")) // serveert JS, CSS en images
+        .manage(RateLimiter::new())
+        .attach(SecurityHeaders)
+        .mount("/", routes![index, send_message, favicon, robots])
+        .mount("/public", FileServer::from("public")) // serveert JS, CSS, fonts en images
+        .register("/", catchers![not_found, server_error, other_error])
 }
