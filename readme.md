@@ -35,6 +35,28 @@ via een `.env` bestand, in productie via echte env vars van je hostingprovider):
 Zolang SMTP niet geconfigureerd is, toont het formulier netjes een foutmelding
 ("Er ging iets mis...") in plaats van te crashen.
 
+## Beveiliging
+
+- **Rate limiting**: max. 5 formulierinzendingen per 10 minuten per IP-adres
+  (in-memory, geen database nodig).
+  ⚠️ **Let op bij deployen achter een reverse proxy** (nginx, Caddy,
+  Cloudflare, een PaaS-load balancer, etc.): Rocket ziet dan standaard het
+  IP-adres van de proxy, niet van de echte bezoeker, waardoor alle bezoekers
+  in dezelfde emmer vallen en de limiter zijn nut verliest. Configureer in
+  dat geval een `Rocket.toml` met de juiste `ip_header` (bv.
+  `X-Forwarded-For`) die past bij jouw proxy - zie de
+  [Rocket-configuratiedocs](https://rocket.rs/guide/v0.5/configuration/#configuration).
+  Draait de site direct op het internet zonder proxy ertussen? Dan is de
+  huidige instelling (geen `ip_header`) juist de veilige default.
+- **Contactformulier**: honeypot-veld tegen bots, server-side validatie
+  (lengtes, verplichte velden, geen controletekens in naam/e-mail om
+  e-mailheader-injectie te voorkomen).
+- **HTTP-headers**: Content-Security-Policy en Referrer-Policy via een eigen
+  fairing; X-Frame-Options en X-Content-Type-Options komen van Rockets
+  ingebouwde Shield-fairing.
+- **Secrets**: SMTP-gegevens staan alleen in `.env` (genegeerd door git),
+  nooit hardcoded in de broncode.
+
 ## Installatie
 1. Zorg dat je **Rust** hebt geïnstalleerd:  
     https://rustup.rs

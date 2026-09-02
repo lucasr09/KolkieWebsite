@@ -67,11 +67,16 @@ fn contact_form_is_valid(form: &ContactForm) -> bool {
     let email = form.email.trim();
     let message = form.message.trim();
 
+    // "name" komt terecht in de e-mail-Subject: geen controletekens (\r, \n)
+    // toestaan, anders kan iemand daarmee extra e-mailheaders injecteren
+    // (bv. een eigen Bcc:) via het naam-veld.
     !name.is_empty()
         && name.chars().count() <= 200
+        && !name.chars().any(|c| c.is_control())
         && email.contains('@')
         && !email.contains(' ')
         && email.chars().count() <= 320
+        && !email.chars().any(|c| c.is_control())
         && !message.is_empty()
         && message.chars().count() <= 5000
 }
@@ -229,11 +234,12 @@ fn index(contact: Option<&str>) -> RawHtml<String> {
         slider_images: SLIDER_IMAGES.iter().chain(SLIDER_IMAGES.iter()).copied().collect(),
     };
 
-    RawHtml(
-        template
-            .render()
-            .unwrap_or_else(|e| format!("Er ging iets mis bij het renderen van de pagina: {e}")),
-    )
+    RawHtml(template.render().unwrap_or_else(|e| {
+        // Interne fouten (bv. een kapotte template) loggen we server-side, maar
+        // geven we niet letterlijk terug aan de bezoeker.
+        eprintln!("Kon index-pagina niet renderen: {e}");
+        "Er ging iets mis bij het laden van deze pagina. Probeer het zo nog eens.".to_string()
+    }))
 }
 
 #[post("/send-message", data = "<form>")]
